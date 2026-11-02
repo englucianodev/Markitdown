@@ -106,6 +106,26 @@ agora distingue erros de rota, tamanho e falha de inicialização da função.
 
 ## Limites e privacidade
 
+A função Python usa a identificação por extensão validada e não instala o detector
+Magika/ONNX, para reduzir o pacote. Os modelos de OCR continuam em arquivos estáticos
+do navegador. `excludeFiles` separa os recursos estáticos, dependências Node, testes
+e ambientes locais de cada função.
+
+Se o deploy anterior apresentou `LAMBDA_SIZE_EXCEEDED` (519,99 MB), envie também
+o `requirements.txt` atualizado e o motor em `packages/markitdown/src/`.
+Faça um novo deploy sem reutilizar o cache de build antigo. Não é necessário
+aumentar o plano nem habilitar funções grandes para aplicar esta correção.
+
+Para verificar a margem local antes de publicar:
+
+```powershell
+.\.venv\Scripts\python scripts/check-runtime-size.py
+```
+
+O teste usa um orçamento de 350 MB para dependências e código, deixando margem
+para os arquivos de runtime gerados pela Vercel. O tamanho final é informado pelo
+deploy da plataforma; a medição local varia conforme o sistema operacional.
+
 - Upload: até 50.000.000 bytes (50 MB) por arquivo.
 - Quantidade: sem limite fixo na seleção; depende da memória do navegador.
 - Requisição direta e resposta JSON da API: até 4,49 MB. Documentos do servidor

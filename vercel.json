@@ -6,7 +6,10 @@
   "functions": {
     "api/index.py": {
       "maxDuration": 300,
-      "excludeFiles": "{.venv/**,**/__pycache__/**,tests/**,.github/**,node_modules/**,web/**,public/**,scripts/**}"
+      "excludeFiles": "{.venv/**,**/.venv/**,.build-audit/**,**/__pycache__/**,tests/**,.github/**,node_modules/**,**/node_modules/**,web/**,public/**,scripts/**}"
+    },
+    "api/upload.mjs": {
+      "excludeFiles": "{.venv/**,.build-audit/**,**/__pycache__/**,tests/**,.github/**,packages/**,server/**,web/**,public/**,scripts/**}"
     }
   },
   "rewrites": [

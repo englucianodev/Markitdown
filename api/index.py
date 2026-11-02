@@ -58,7 +58,7 @@ def create_converter():
     # Avoid importing native document dependencies before health/config can respond.
     try:
         from markitdown import MarkItDown
-        return MarkItDown(enable_plugins=False)
+        return MarkItDown(enable_plugins=False, enable_magika=False)
     except Exception as exc:
         logging.exception("Falha ao inicializar o motor MarkItDown")
         raise EngineUnavailable("O motor de conversão não iniciou. Consulte os Logs da Vercel e reinstale requirements.txt.") from exc

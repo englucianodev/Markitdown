@@ -3,3 +3,4 @@
 tests
 .github
 web/node_modules
+.build-audit

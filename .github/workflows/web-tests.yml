@@ -21,6 +21,7 @@ jobs:
       - run: npm run build
       - run: python -m pip install -r requirements-dev.txt
       - run: python -m pip check
+      - run: python scripts/check-runtime-size.py
       - run: python -m unittest discover -s tests/web -v
       - run: node --check public/app.js
       - run: node tests/web/test_upload_limits.cjs

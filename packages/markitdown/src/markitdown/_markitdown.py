@@ -14,7 +14,6 @@ from pathlib import Path
 from urllib.parse import urlparse
 from warnings import warn
 import requests
-import magika
 import charset_normalizer
 import codecs
 
@@ -147,6 +146,7 @@ class MarkItDown:
         *,
         enable_builtins: Union[None, bool] = None,
         enable_plugins: Union[None, bool] = None,
+        enable_magika: bool = True,
         **kwargs,
     ):
         self._builtins_enabled = False
@@ -165,7 +165,12 @@ class MarkItDown:
         else:
             self._requests_session = requests_session
 
-        self._magika = magika.Magika()
+        # File-upload applications can supply validated extensions without loading
+        # the optional ML detector and its large native ONNX runtime.
+        self._magika = None
+        if enable_magika:
+            import magika
+            self._magika = magika.Magika()
 
         # TODO - remove these (see enable_builtins)
         self._llm_client: Any = None
@@ -750,7 +755,7 @@ class MarkItDown:
         self, file_stream: BinaryIO, base_guess: StreamInfo
     ) -> List[StreamInfo]:
         """
-        Given a base guess, attempt to guess or expand on the stream info using the stream content (via magika).
+        Expand stream metadata using extensions/charsets and optional Magika detection.
         """
         guesses: List[StreamInfo] = []
 
@@ -770,6 +775,28 @@ class MarkItDown:
             _e = mimetypes.guess_all_extensions(base_guess.mimetype, strict=False)
             if len(_e) > 0:
                 enhanced_guess = enhanced_guess.copy_and_update(extension=_e[0])
+
+        if self._magika is None:
+            # Preserve charset detection for text formats, including XML/YAML and
+            # logs whose MIME types aren't consistently registered by every OS.
+            text_extensions = {
+                ".txt", ".text", ".md", ".markdown", ".json", ".jsonl", ".csv",
+                ".tsv", ".html", ".htm", ".xml", ".rss", ".yaml", ".yml",
+                ".log", ".ipynb",
+            }
+            mimetype = enhanced_guess.mimetype or ""
+            if enhanced_guess.charset is None and (
+                enhanced_guess.extension in text_extensions or mimetype.startswith("text/")
+            ):
+                cur_pos = file_stream.tell()
+                try:
+                    sample = _read_charset_sample(file_stream)
+                    detected = charset_normalizer.from_bytes(sample).best()
+                    charset = self._normalize_charset(detected.encoding) if detected else "utf-8"
+                    enhanced_guess = enhanced_guess.copy_and_update(charset=charset)
+                finally:
+                    file_stream.seek(cur_pos)
+            return [enhanced_guess]
 
         # Call magika to guess from the stream
         cur_pos = file_stream.tell()

@@ -88,12 +88,18 @@ node tests/web/test_upload_ticket.mjs
 node tests/web/test_api_responses.cjs
 node tests/web/test_image_exports.cjs
 node tests/web/test_zip.cjs | .\.venv\Scripts\python tests/web/check_zip.py
+.\.venv\Scripts\python scripts/check-runtime-size.py
 ```
 
 `requirements.in` declara as dependências diretas, `requirements.txt` fixa as
 versões e `requirements-dev.txt` acrescenta apenas o gerador de Word usado nos testes.
 O `package-lock.json` fixa as bibliotecas de upload, OCR, PDF e imagens, além da
 ferramenta que gera os módulos do navegador.
+
+A API usa identificação por extensão validada, sem Magika/ONNX. Esses pacotes de
+detecção automática não são necessários ao OCR local e foram retirados para manter
+o pacote Python abaixo do limite de tamanho da Vercel. O teste de tamanho reserva
+uma margem para o runtime da plataforma.
 
 ## Estrutura
 

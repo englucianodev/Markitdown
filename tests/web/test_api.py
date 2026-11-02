@@ -50,6 +50,20 @@ class WebTests(unittest.TestCase):
         self.assertIn("Olá, mundo!", response.json["markdown"])
         self.assertEqual(response.json["filename"], "ação.txt")
 
+    def test_conversion_without_ml_detector(self):
+        # A deployment without Magika/ONNX must still convert encoded text formats.
+        from markitdown import MarkItDown, StreamInfo
+        with patch.dict(sys.modules, {"magika":None, "onnxruntime":None}):
+            converter=MarkItDown(enable_plugins=False, enable_magika=False)
+            for suffix,text,encoding in [
+                ('.xml','<root>Conversão de documentos</root>','utf-16'),
+                ('.yaml','titulo: relatório\nvalor: 42','utf-8'),
+                ('.log','Registro de conversão concluída','utf-8'),
+            ]:
+                with self.subTest(suffix=suffix):
+                    result=converter.convert_stream(io.BytesIO(text.encode(encoding)),stream_info=StreamInfo(extension=suffix))
+                    self.assertIn('Conversão' if suffix=='.xml' else 'relatório' if suffix=='.yaml' else 'conversão',result.markdown)
+
     def test_html_tables_and_script_sanitization(self):
         response = self.upload("tabela.html", b"<h1>Report</h1><script>alert(1)</script><table><tr><th>Name</th><th>Total</th></tr><tr><td>Ana</td><td>10</td></tr></table>")
         self.assertEqual(response.status_code, 200, response.json)

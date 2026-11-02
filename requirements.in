@@ -5,7 +5,7 @@ beautifulsoup4
 requests
 certifi>=2026.10.19
 markdownify
-magika>=0.6.1,<2
+# The web API validates extensions/signatures; the ML detector Magika/ONNX is not needed.
 charset-normalizer
 defusedxml
 python-pptx

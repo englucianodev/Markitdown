@@ -24,3 +24,4 @@ public/blob-upload.js
 public/documents.js
 public/ocr/
 public/pdf/
+.build-audit/
