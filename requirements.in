@@ -1,5 +1,23 @@
 # Runtime dependencies only. requirements.txt contains the resolved versions.
-./packages/markitdown[pdf,docx,pptx,xlsx,xls,outlook]
+# MarkItDown source is bundled under packages/markitdown/src, not installed.
+# Vercel's runtime uses --no-build and cannot install local source distributions.
+beautifulsoup4
+requests
+certifi>=2026.10.19
+markdownify
+magika>=0.6.1,<2
+charset-normalizer
+defusedxml
+python-pptx
+mammoth>=1.12.2,<2
+pandas
+openpyxl
+xlrd
+lxml
+pdfminer.six>=20251230
+pdfplumber>=0.11.9
+olefile
 Flask>=3.1,<4
 Markdown>=3.7,<4
 bleach>=6.2,<7
+vercel-blob>=0.5,<1

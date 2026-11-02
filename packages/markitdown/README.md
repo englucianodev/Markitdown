@@ -1,12 +1,12 @@
-# MarkItDown — motor de conversão
+# MarkItDown — motor incluído
 
 Código do motor MarkItDown usado pela aplicação web deste repositório.
-A instalação é feita pelo `requirements.txt` da raiz, com os extras PDF, DOCX,
-PPTX, XLSX, XLS e Outlook. As integrações opcionais de áudio, Azure e IA não são
-necessárias para a aplicação e não são instaladas.
+Ele é incluído como fonte em `src/markitdown` e carregado diretamente pela API.
+Não instale este diretório como dependência local no runtime da Vercel: o modo
+`--no-build` da plataforma rejeita a instalação de distribuições locais sem wheel.
 
-Os módulos internos permanecem juntos porque o motor os importa e reutiliza.
-A documentação da aplicação está em `../../README.md` e `../../DEPLOY_VERCEL.md`.
+As bibliotecas necessárias aos conversores da aplicação estão declaradas no
+`requirements.in` da raiz e fixadas no `requirements.txt`.
 
 Origem: https://github.com/microsoft/markitdown
 Licença: MIT; consulte `../../LICENSE` e `ThirdPartyNotices.md`.

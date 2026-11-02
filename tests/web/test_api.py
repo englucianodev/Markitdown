@@ -1,4 +1,5 @@
 import io
+import json
 from pathlib import Path
 import sys
 import unittest
@@ -33,8 +34,15 @@ class WebTests(unittest.TestCase):
         with self.client.get("/") as home:
             self.assertEqual(home.status_code, 200)
         response = self.client.get("/api/health")
-        self.assertEqual(response.json["max_file_bytes"], 4_490_000)
+        self.assertEqual(response.json["max_file_bytes"], 50_000_000)
+        self.assertEqual(response.json["direct_upload_max_bytes"], 4_490_000)
         self.assertEqual(response.headers["Cache-Control"], "no-store")
+
+    def test_security_headers_match_deployment(self):
+        config=json.loads((ROOT/'vercel.json').read_text())
+        deployed=next(header['value'] for header in config['headers'][0]['headers'] if header['key']=='Content-Security-Policy')
+        response=self.client.get('/api/health')
+        self.assertEqual(response.headers['Content-Security-Policy'],deployed)
 
     def test_unicode_text(self):
         response = self.upload("ação.txt", "Olá, mundo!\nDocumento de teste.".encode())

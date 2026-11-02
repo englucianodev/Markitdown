@@ -1,0 +1,18 @@
+const fs=require('node:fs');
+const vm=require('node:vm');
+const assert=require('node:assert/strict');
+const source=fs.readFileSync('public/app.js','utf8');
+const get=(start,end)=>source.slice(source.indexOf(start),source.indexOf(end));
+const context={escapeHtml:value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),format:()=> 'md'};
+vm.createContext(context);
+vm.runInContext(get('function htmlDocument(','function syncResults(')+get('function outputResult(','function refreshOutput(')+get('function exportFile(','function downloadBlob('),context);
+const item={file:{name:'imagens.pdf'},result:{filename:'imagens.pdf',markdown:'# Texto',html:'<h1>Texto</h1>',text:'Texto',warnings:[],assets:[{name:'foto.png',caption:'Foto <script>alert(1)</script>',src:'data:image/png;base64,AAAA',selected:true},{name:'ignorada.png',caption:'Ignorada',src:'data:image/png;base64,BBBB',selected:false}]}};
+assert.match(context.exportFile(item,'md').content,/base64,AAAA/);
+assert.doesNotMatch(context.exportFile(item,'md').content,/base64,BBBB/);
+assert.match(context.exportFile(item,'html').content,/Foto &lt;script&gt;/);
+assert.equal(JSON.parse(context.exportFile(item,'json').content).images.length,1);
+assert.equal(context.exportFile(item,'txt').content,'Texto');
+item.result.assets[0].selected=false;
+assert.doesNotMatch(context.exportFile(item,'html').content,/<figure>/);
+assert.doesNotMatch(context.exportFile(item,'md').content,/data:image/);
+console.log('Imagens: seleção, exclusão, legendas escapadas e formatos de exportação verificados.');

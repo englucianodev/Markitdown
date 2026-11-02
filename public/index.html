@@ -23,7 +23,7 @@
     </section>
     <div class="workspace">
       <section class="card upload-card" aria-labelledby="upload-title">
-        <div class="section-heading"><span class="step">01</span><h2 id="upload-title">Adicione seus arquivos</h2><span class="small-tag">ATÉ 4,49 MB / ARQUIVO</span></div>
+        <div class="section-heading"><span class="step">01</span><h2 id="upload-title">Adicione seus arquivos</h2><span class="small-tag">ATÉ 50 MB / ARQUIVO</span></div>
         <label class="dropzone" id="dropzone" for="file-input">
           <span class="upload-icon" aria-hidden="true">↥</span>
           <strong>Arraste seus documentos até aqui</strong>
@@ -35,8 +35,14 @@
         <p id="empty-queue" class="empty-queue">Tudo pronto para receber seus documentos.</p>
         <ul id="queue" class="queue" aria-label="Arquivos selecionados"></ul>
         <div id="message" class="message" role="status" aria-live="polite" hidden></div>
+        <fieldset class="processing-options"><legend>Leitura e imagens</legend>
+          <label for="ocr-mode">Reconhecimento de texto (OCR)<select id="ocr-mode"><option value="auto">Automático — reconhecer digitalizações</option><option value="all">Forçado — reconhecer todas as páginas</option><option value="off">Desativado — usar somente texto existente</option></select></label>
+          <label for="ocr-language">Idioma do OCR<select id="ocr-language"><option value="por+eng">Português e inglês</option><option value="por">Português</option><option value="eng">Inglês</option></select></label>
+          <label for="image-policy">Imagens na exportação<select id="image-policy"><option value="preserve">Preservar e escolher antes de baixar</option><option value="ignore">Ignorar imagens — exportar só texto</option></select></label>
+          <p>OCR é feito no seu navegador e pode demorar. Nos PDFs, a preservação inclui a imagem de cada página. TXT exporta somente texto.</p>
+        </fieldset>
         <button id="convert" class="primary" disabled>Converter arquivos <span aria-hidden="true">→</span></button>
-        <p class="privacy"><span aria-hidden="true">♧</span> Sem cadastro. Os arquivos não são armazenados pelo aplicativo.</p>
+        <p class="privacy"><span aria-hidden="true">♧</span> PDF e imagens são lidos localmente. Outros arquivos grandes usam armazenamento privado temporário.</p>
       </section>
       <aside class="card export-card" aria-labelledby="export-title">
         <div class="section-heading"><span class="step">02</span><h2 id="export-title">Do seu jeito</h2></div>
@@ -55,11 +61,12 @@
       <div class="section-heading"><span class="step">03</span><h2 id="results-title">Seu conteúdo, pronto</h2><span id="result-count" class="small-tag"></span></div>
       <div class="result-toolbar"><label class="sr-only" for="result-select">Documento para visualizar</label><select id="result-select"></select><div class="tabs" role="group" aria-label="Visualização"><button id="preview-tab" aria-pressed="true">Prévia</button><button id="source-tab" aria-pressed="false">Markdown</button></div><button id="copy" class="text-button">Copiar texto</button><button id="download" class="download-button">↓ Baixar arquivo</button></div>
       <div id="result-warnings" class="message" hidden></div>
+      <details id="image-controls" class="image-controls" hidden><summary>Selecionar imagens e editar legendas</summary><div class="image-toolbar"><button id="include-images" class="text-button">Selecionar todas</button><button id="exclude-images" class="text-button">Ignorar todas</button></div><div id="image-list" class="image-list"></div><p class="muted">As imagens selecionadas são incluídas no final do HTML, Markdown e JSON. O texto reconhecido por OCR é mantido mesmo quando a imagem é desmarcada.</p></details>
       <article id="preview" class="document-preview" aria-label="Prévia do documento convertido"></article>
       <pre id="source" hidden></pre>
     </section>
     <section class="benefits" aria-label="Como funciona"><div><span>↥</span><strong>Envie de uma vez</strong><p>Selecione vários documentos.<br>Cuidamos de um por vez.</p></div><div><span>⇄</span><strong>O conteúdo vem primeiro</strong><p>Títulos, listas e tabelas em<br>um formato fácil de aproveitar.</p></div><div><span>↓</span><strong>Escolha e leve com você</strong><p>Baixe individualmente ou reúna<br>os resultados em um ZIP.</p></div></section>
-    <section id="formats" class="formats"><div><span class="eyebrow">MUITOS FORMATOS. UM SÓ LUGAR.</span><h2>O que você pode converter?</h2><p>Extraia o conteúdo dos seus documentos.<br>A aparência original pode mudar na conversão.</p></div><div class="format-details"><details open><summary>Documentos, apresentações e planilhas</summary><p>PDF com texto, Word (.docx), PowerPoint (.pptx), Excel (.xlsx e .xls), CSV e TSV.</p></details><details><summary>Web, livros e outros arquivos</summary><p>HTML, EPUB, TXT, Markdown, JSON, XML, RSS, YAML, logs, notebooks Jupyter (.ipynb), mensagens Outlook (.msg) e ZIP com documentos compatíveis.</p></details><details><summary>Imagens, áudio e documentos digitalizados</summary><p>Esta versão web não inclui OCR nem transcrição. PDFs digitalizados e imagens precisam de reconhecimento de texto antes do envio. Áudio, vídeos, arquivos .doc e .ppt antigos não são compatíveis; exporte-os para um formato da lista.</p></details></div></section>
+    <section id="formats" class="formats"><div><span class="eyebrow">MUITOS FORMATOS. UM SÓ LUGAR.</span><h2>O que você pode converter?</h2><p>Extraia o conteúdo dos seus documentos.<br>A aparência original pode mudar na conversão.</p></div><div class="format-details"><details open><summary>Documentos, apresentações e planilhas</summary><p>PDF com texto ou digitalizado, Word (.docx), PowerPoint (.pptx), Excel (.xlsx e .xls), CSV e TSV.</p></details><details><summary>Web, livros e outros arquivos</summary><p>HTML, EPUB, TXT, Markdown, JSON, XML, RSS, YAML, logs, notebooks Jupyter (.ipynb), mensagens Outlook (.msg) e ZIP com documentos compatíveis. Para OCR e seleção de imagens, envie os documentos fora do ZIP.</p></details><details><summary>Imagens e reconhecimento de texto</summary><p>PNG, JPG, JPEG, WebP, GIF e BMP. OCR em português e inglês para imagens, PDFs e imagens incorporadas em DOCX, PPTX, XLSX e EPUB. Revise o texto reconhecido: fotos de baixa qualidade, manuscritos e tabelas complexas podem exigir correções. Áudio, vídeo e formatos .doc e .ppt antigos não são compatíveis.</p></details></div></section>
   </main>
   <footer class="wrap"><span>MarkItDown<span class="brand-dot">.</span> <span class="muted">Documentos com novas possibilidades.</span></span><span>Feito com o motor open source da Microsoft.</span></footer>
 </body>

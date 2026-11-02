@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
+import handler, { verifyTicket } from '../../api/upload.mjs';
+import { getPayloadFromClientToken } from '@vercel/blob/client';
+
+const secret = 'vercel_blob_rw_teststore_not-a-real-secret';
+const data = {filename:'teste.pdf',size:50_000_000,pathname:`uploads/${'a'.repeat(32)}/source.pdf`,exp:Math.floor(Date.now()/1000)+600};
+const sign = data => { const payload=Buffer.from(JSON.stringify(data)).toString('base64url'); return `${payload}.${createHmac('sha256',secret).update(payload).digest('base64url')}`; };
+assert.equal(verifyTicket(sign(data),secret).size,50_000_000);
+assert.throws(() => verifyTicket(sign({...data,size:50_000_001}),secret));
+assert.throws(() => verifyTicket(sign({...data,exp:0}),secret));
+assert.throws(() => verifyTicket(sign({...data,pathname:'../secrets'}),secret));
+assert.throws(() => verifyTicket(sign(data),'different-store'));
+process.env.BLOB_READ_WRITE_TOKEN = secret;
+const response = {setHeader(){},status(code){this.statusCode=code;return this;},json(body){this.body=body;return this;}};
+await handler({method:'POST',url:'/api/upload',headers:{},body:{type:'blob.generate-client-token',payload:{pathname:data.pathname,clientPayload:sign(data),multipart:true}}},response);
+assert.equal(response.statusCode,200,JSON.stringify(response.body));
+const issued = getPayloadFromClientToken(response.body.clientToken);
+assert.equal(issued.maximumSizeInBytes,50_000_000);
+assert.equal(issued.pathname,data.pathname);
+assert.equal(issued.allowOverwrite,false);
+assert.equal(issued.addRandomSuffix,false);
+console.log('Autorização do upload: assinatura, expiração, caminho e tamanho validados.');

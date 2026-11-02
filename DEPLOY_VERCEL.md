@@ -1,122 +1,141 @@
-# MarkItDown Web — GitHub + Vercel
+# Publicar MarkItDown Web na Vercel
 
-Interface em português para converter vários documentos, visualizar o resultado,
-copiar o texto e baixar arquivos individuais ou um ZIP. Exportações: Markdown,
-texto simples, HTML e JSON. O formato de saída pode ser alterado sem reconverter.
+## 1. Enviar ao GitHub
 
-## Publicar
+Envie o projeto completo, incluindo `api/`, `server/`, `web/`, `public/`,
+`packages/markitdown/src/`, `requirements.txt`, `package.json`, `package-lock.json`,
+`.python-version` e `vercel.json`.
+Inclua também `scripts/`, usado para gerar os recursos de OCR durante o build.
 
-1. Envie **este repositório inteiro** ao GitHub, incluindo `api/`, `public/`,
-   `packages/markitdown/`, `requirements.txt`, `.python-version` e `vercel.json`.
-   A API usa o código local do projeto, e não uma versão diferente do PyPI.
-2. Na Vercel, escolha **Add New → Project** e importe o repositório.
-3. Use a raiz do repositório como **Root Directory** e **Other** como framework.
-   Não configure um build de Node/Next.js. Deixe Build Command e Install Command
-   nos padrões da Vercel; o runtime Python instala `requirements.txt`.
-   O diretório de saída já está definido como `public` no `vercel.json`.
-4. Clique em **Deploy**. Nenhuma chave de API ou banco de dados é necessária.
-5. Abra o endereço publicado e converta um TXT e um PDF com texto. Para verificar
-   a disponibilidade da API, abra `/api/health`.
+Não envie `.venv`, `node_modules` ou arquivos `.env` com credenciais.
+Os módulos `public/blob-upload.js`, `public/documents.js` e os diretórios
+`public/ocr/` e `public/pdf/` são gerados durante o build e não precisam estar no Git.
+São arquivos estáticos servidos pela Vercel; não entram no pacote da função Python.
 
-Cada push na branch de produção dispara um novo deploy. Não envie `.venv`,
-credenciais ou documentos pessoais; os arquivos de ignore já excluem o ambiente
-de desenvolvimento. As dependências são instaladas pela Vercel durante o deploy.
+## 2. Configurar o projeto
 
-## Executar localmente
+Na Vercel, escolha Add New → Project e importe o repositório:
 
-Requer Python 3.12 (a versão declarada para publicação).
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python -m pip install -r requirements.txt
-.\.venv\Scripts\python api/index.py
-```
-
-Abra http://127.0.0.1:3000. Em Linux/macOS, use `.venv/bin/python`.
-O servidor integrado é apenas para desenvolvimento. Na Vercel, o runtime executa
-o objeto WSGI `app` de `api/index.py`.
-
-Testes da camada web:
-
-```powershell
-.\.venv\Scripts\python -m pip install -r requirements-dev.txt
-.\.venv\Scripts\python -m unittest discover -s tests/web -v
-node --check public/app.js
-node tests/web/test_upload_limits.cjs
-node tests/web/test_zip.cjs | .\.venv\Scripts\python tests/web/check_zip.py
-```
-
-## O que é compatível
-
-| Entrada | Comportamento |
+| Campo | Valor |
 | --- | --- |
-| PDF | Extração de texto existente; PDFs digitalizados precisam de OCR prévio |
-| DOCX, PPTX | Texto e estrutura; não reproduz o layout original |
-| XLSX, XLS, CSV, TSV | Conteúdo das planilhas/tabelas |
-| HTML, EPUB | Conteúdo convertido para Markdown |
-| TXT, MD, JSON, XML, RSS, YAML, logs | Conteúdo textual |
-| IPYNB | Conteúdo do notebook, sem executar código |
-| MSG | Conteúdo suportado pelo conversor Outlook |
-| ZIP | Documentos compatíveis reunidos em um resultado; itens com erro são listados |
+| Framework Preset | Other |
+| Root Directory | Raiz do repositório (`./`) |
+| Build Command | `npm run build` (já configurado no vercel.json) |
+| Install Command | Padrão automático (`npm install`/`npm ci`) |
+| Output Directory | `public` (já configurado no vercel.json) |
+| Python | 3.12, declarado em `.python-version` |
+| Node.js | 24.x, declarado em `package.json` |
 
-O motor original também oferece integrações com modelos de visão, Azure,
-transcrição de áudio e YouTube. Esses recursos exigem serviços, chaves e/ou
-binários adicionais e **não estão habilitados nesta interface**. Imagens, áudio,
-vídeo, `.doc`, `.ppt`, documentos com senha e formatos arbitrários não são
-compatíveis. Não existe conversão universal de qualquer arquivo. O projeto
-extrai conteúdo; não é um conversor visual de PDF para Word nem de Excel para PDF.
+As funções Python instalam `requirements.txt` automaticamente. A função Node usa
+`@vercel/blob` do `package.json`. Não defina o diretório raiz como `public`.
+Mantenha Fluid Compute habilitado para a duração de até 300 segundos.
+
+## 3. Habilitar uploads de 50 MB
+
+1. No projeto da Vercel, abra **Storage → Create Storage → Blob**.
+2. Escolha acesso **Private** e conecte o store ao projeto.
+3. Inclua o ambiente **Production** e, se desejado, Preview e Development.
+4. Confirme em **Settings → Environment Variables** a variável
+   **BLOB_READ_WRITE_TOKEN**. Use o nome padrão, sem prefixo personalizado.
+5. Faça um novo deploy para que as funções recebam a variável.
+
+O token fica somente no servidor. O navegador recebe uma autorização assinada
+para um único arquivo, com caminho aleatório, prazo de validade e limite de tamanho.
+A função Node verifica a autorização antes de permitir o upload. A aplicação é
+pública: proteja o projeto pela Vercel se quiser restringir quem pode converter.
+
+PDFs e imagens de até 50 MB são processados localmente e não precisam de Blob.
+Outros arquivos até 4,49 MB também não precisam de Blob. Documentos do servidor
+entre 4,49 MB e 50 MB vão diretamente do navegador ao armazenamento,
+sem atravessar o corpo da requisição da função Python. A API recebe apenas o ticket,
+baixa o arquivo do store privado, converte e tenta excluir o upload.
+
+Consulte https://vercel.com/docs/vercel-blob/client-upload para criar e conectar o store.
+O uso do armazenamento e a transferência seguem as cotas do seu plano Vercel.
+
+## 4. Verificar o deploy
+
+Abra `/api/health`. A resposta deve incluir:
+
+```json
+{
+  "status": "ok",
+  "max_file_bytes": 50000000,
+  "direct_upload_max_bytes": 4490000,
+  "large_uploads_configured": true
+}
+```
+
+Abra `/api/health?check=conversion` para também verificar a inicialização do motor.
+Depois converta um TXT pequeno, um PDF digitalizado e uma imagem PNG com texto.
+Para verificar o upload Blob, use um DOCX/PPTX/XLSX maior que 4,49 MB.
+A fila exibe progresso durante upload, leitura das páginas e OCR.
+
+## OCR e imagens
+
+O build copia o Tesseract.js, modelos português/inglês e o leitor PDF.js para
+`public/`. Não é necessário instalar Tesseract no servidor nem cadastrar chave de IA.
+Não omita `npm run build`: arquivos de OCR ausentes impedem a leitura local.
+Os cabeçalhos permitem os workers e o WebAssembly necessários sem liberar scripts
+arbitrários. Não remova `worker-src` e `'wasm-unsafe-eval'` da política CSP.
+
+Na página, escolha OCR automático/forçado/desativado e preservar/ignorar imagens.
+Depois da conversão, abra **Selecionar imagens e editar legendas**. Os formatos
+HTML, Markdown e JSON incluem as imagens selecionadas; TXT é somente texto.
+Imagens de PDF são páginas renderizadas; imagens de Office/EPUB ficam reunidas
+ao final. Para ZIP, envie os documentos extraídos para usar OCR e seleção de imagens.
+
+## Corrigir o erro observado no deploy anterior
+
+O erro informado foi:
+
+```text
+Distribution `markitdown @ directory+packages/markitdown` can't be installed
+because it is marked as `--no-build` but has no binary distribution
+```
+
+A correção foi retirar `./packages/markitdown` de `requirements.txt`.
+O código do motor é distribuído como fonte incluída e carregado pela API; apenas
+suas bibliotecas externas são instaladas. Não reinsira o pacote local na lista.
+
+Após enviar os arquivos atualizados ao GitHub, faça **Redeploy**. Se o build antigo
+persistir, desmarque a opção de usar o cache do build ao fazer o redeploy.
+
+Se houver novo erro, abra **Logs** e filtre pela chamada que falhou. A interface
+agora distingue erros de rota, tamanho e falha de inicialização da função.
 
 ## Limites e privacidade
 
-- Sem limite fixo de quantidade na seleção; a capacidade prática depende da memória
-  do navegador. O ZIP suporta até 65.535 resultados e tamanho total inferior a 4 GiB;
-  lotes acima desses limites devem ser baixados individualmente ou em partes.
-- **4.490.000 bytes (4,49 MB) por arquivo**. O navegador envia um arquivo por
-  requisição, deixando 10 KB de margem abaixo do limite de payload de 4,5 MB da Vercel:
-  https://vercel.com/docs/functions/limitations
-- A resposta JSON completa pode ter até 4,49 MB, incluindo Markdown, HTML e texto
-  simples. O limite anterior de 1 MB para o texto extraído foi removido; resultados
-  cuja resposta completa exceda o teto precisam ser divididos. A função permite
-  até 300 segundos por documento, com Fluid Compute habilitado na Vercel. O tempo
-  limite do navegador acompanha essa configuração.
-- Arquivos ZIP/Office/EPUB são inspecionados antes da conversão: limite de 40 MB
-  descompactados, 1.500 itens e profundidade de compactação limitada.
-- Uploads e resultados são mantidos em memória pelo aplicativo; não há banco,
-  bucket ou histórico. Recarregar a página descarta os resultados. O conteúdo é
-  enviado ao servidor na Vercel; não há envio para um serviço de IA. A infraestrutura
-  da hospedagem continua sujeita às políticas da Vercel.
-- A prévia HTML é sanitizada com uma lista de tags e atributos permitidos; imagens e scripts do
-  documento não são carregados. Links e conteúdo textual continuam disponíveis.
-- URLs não são aceitas como entrada. Plugins de terceiros ficam desativados.
-- O endpoint é público. Para uso restrito, habilite a proteção de acesso do projeto
-  e configure regras e limites no Firewall da Vercel conforme sua necessidade.
+- Upload: até 50.000.000 bytes (50 MB) por arquivo.
+- Quantidade: sem limite fixo na seleção; depende da memória do navegador.
+- Requisição direta e resposta JSON da API: até 4,49 MB. Documentos do servidor
+  que gerem texto demais ainda podem exigir divisão. Resultados de PDF/OCR e
+  imagens preparados localmente não passam por esse limite de resposta.
+- Etapa no servidor: até 300 segundos. OCR local depende do dispositivo e do
+  número de páginas/imagens; mantenha a aba aberta durante a análise.
+- ZIP/Office/EPUB: até 200 MB descompactados, 1.500 itens e profundidade limitada.
+- ZIP de exportação: até 65.535 resultados e tamanho total inferior a 4 GiB.
+- OCR em português/inglês, sujeito a erros em manuscritos e digitalizações ruins.
+  Sem transcrição de áudio/vídeo, arquivos com senha ou conversão universal.
+- Arquivos pequenos são processados em memória. Arquivos grandes usam Blob privado
+  temporário e têm exclusão solicitada mesmo quando a conversão falha.
+- Se a aba fechar depois do upload, ou a função for encerrada abruptamente,
+  o arquivo pode permanecer no store. Revise e remova periodicamente uploads
+  abandonados com mais de uma hora no diretório `uploads/` do painel Blob.
+- PDFs e imagens ficam no navegador; documentos Office e outros formatos são
+  enviados ao servidor para extração de texto, e o OCR de suas imagens ocorre
+  localmente. Não há banco de dados, histórico ou envio a um modelo de IA.
 
-Para documentos acima de 4,49 MB, uma evolução exige upload direto a armazenamento
-e um serviço de processamento separado; aumentar apenas `MAX_CONTENT_LENGTH`
-não remove o limite da plataforma.
+## Executar e testar localmente
 
-## Estrutura acrescentada
+Veja os comandos do [README.md](README.md). Para o fluxo completo com Blob e a
+função Node, use `npx vercel dev` e configure as variáveis do projeto no ambiente
+local. O servidor `python api/index.py` serve somente a aplicação Python.
 
-- `public/`: interface estática, sem build e sem dependências JavaScript externas.
-- `api/index.py`: API Flask, validação, adaptação para MarkItDown e sanitização.
-- `requirements.in`: dependências diretas usadas pela interface.
-- `requirements.txt`: versões fixadas das dependências de produção, incluindo
-  as transitivas, para instalação reproduzível no Python 3.12.
-- `requirements-dev.txt`: acrescenta apenas a dependência para gerar Word nos testes.
-- `vercel.json`: rotas, diretório público, duração da função e cabeçalhos.
-- `tests/web/`: testes de conversão, validação e interoperabilidade do ZIP.
-
-O pacote `packages/markitdown/` e sua interface de linha de comando permanecem
-disponíveis. MCP, plugins externos, testes da distribuição original e configurações
-de Docker foram removidos porque não são usados pelo site. Os módulos internos do
-motor foram preservados para manter suas importações e conversores funcionando.
-
-Ao alterar as dependências diretas, atualize `requirements.in` e gere novamente
-`requirements.txt` com uv, antes de instalar e executar os testes:
+Para atualizar a lista fixada após alterar `requirements.in`:
 
 ```powershell
 python -m uv pip compile requirements.in --python-version 3.12 --universal --no-annotate --output-file requirements.txt
 ```
 
-O uv é uma ferramenta opcional para atualizar a lista fixada; não é necessário
-para executar ou publicar a aplicação.
+O uv é opcional para atualizar as versões; não é necessário para publicar.

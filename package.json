@@ -1,0 +1,21 @@
+{
+  "name": "markitdown-web",
+  "private": true,
+  "type": "module",
+  "engines": {"node": "24.x"},
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --check public/app.js && node tests/web/test_upload_limits.cjs"
+  },
+  "dependencies": {
+    "@tesseract.js-data/eng": "^1.0.0",
+    "@tesseract.js-data/por": "^1.0.0",
+    "@vercel/blob": "^2.3.0",
+    "jszip": "^3.10.2",
+    "pdfjs-dist": "^6.5.438",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

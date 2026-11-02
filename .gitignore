@@ -19,3 +19,8 @@ htmlcov/
 *.log
 .DS_Store
 Thumbs.db
+node_modules/
+public/blob-upload.js
+public/documents.js
+public/ocr/
+public/pdf/

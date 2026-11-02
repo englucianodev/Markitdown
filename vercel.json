@@ -1,20 +1,27 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
+  "buildCommand": "npm run build",
   "outputDirectory": "public",
   "functions": {
     "api/index.py": {
       "maxDuration": 300,
-      "excludeFiles": "{.venv/**,**/__pycache__/**,tests/**,.github/**}"
+      "excludeFiles": "{.venv/**,**/__pycache__/**,tests/**,.github/**,node_modules/**,web/**,public/**,scripts/**}"
     }
   },
-  "rewrites": [{"source": "/api/:path*", "destination": "/api/index"}],
+  "rewrites": [
+    {"source": "/api/health", "destination": "/api/index"},
+    {"source": "/api/convert", "destination": "/api/index"},
+    {"source": "/api/uploads", "destination": "/api/index"},
+    {"source": "/api/convert-blob", "destination": "/api/index"},
+    {"source": "/api/delete-upload", "destination": "/api/index"}
+  ],
   "headers": [{
     "source": "/(.*)",
     "headers": [
       {"key": "X-Content-Type-Options", "value": "nosniff"},
       {"key": "Referrer-Policy", "value": "no-referrer"},
-      {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"}
+      {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self'; font-src 'self' data: blob:; img-src 'self' data: blob:; connect-src 'self' blob: https://vercel.com https://blob.vercel-storage.com https://*.blob.vercel-storage.com; frame-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"}
     ]
   }]
 }
