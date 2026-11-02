@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Transforme documentos em conteúdo fácil de usar. Converta PDF, Word, Excel e outros arquivos e exporte em vários formatos.">
+  <meta name="theme-color" content="#164d42">
+  <title>MarkItDown — seus documentos, novas possibilidades</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar wrap">
+    <a class="brand" href="/" aria-label="MarkItDown, início"><span class="brand-icon">m<span>↓</span></span>MarkItDown<span class="brand-dot">.</span></a>
+    <a class="nav-link" href="#formats">Formatos compatíveis <span aria-hidden="true">↗</span></a>
+  </header>
+  <main class="wrap">
+    <section class="intro">
+      <span class="eyebrow"><span class="dot"></span> MENOS FORMATAÇÃO. MAIS POSSIBILIDADES.</span>
+      <h1>Seu documento.<br>Um novo <span>começo.</span></h1>
+      <p>Transforme seus arquivos em conteúdo fácil de editar, compartilhar<br class="desktop-break"> e usar com inteligência artificial. Simples assim.</p>
+    </section>
+    <div class="workspace">
+      <section class="card upload-card" aria-labelledby="upload-title">
+        <div class="section-heading"><span class="step">01</span><h2 id="upload-title">Adicione seus arquivos</h2><span class="small-tag">ATÉ 4 MB / ARQUIVO</span></div>
+        <label class="dropzone" id="dropzone" for="file-input">
+          <span class="upload-icon" aria-hidden="true">↥</span>
+          <strong>Arraste seus documentos até aqui</strong>
+          <span>ou <span class="choose">escolha os arquivos</span> no seu dispositivo</span>
+          <span class="file-types">PDF · WORD · EXCEL · POWERPOINT · E MAIS</span>
+          <input id="file-input" type="file" multiple aria-label="Escolher documentos">
+        </label>
+        <div class="queue-heading"><h3>Seus arquivos <span id="queue-count">0</span></h3><button id="clear" class="text-button" disabled>Limpar lista</button></div>
+        <p id="empty-queue" class="empty-queue">Tudo pronto para receber seus documentos.</p>
+        <ul id="queue" class="queue" aria-label="Arquivos selecionados"></ul>
+        <div id="message" class="message" role="status" aria-live="polite" hidden></div>
+        <button id="convert" class="primary" disabled>Converter arquivos <span aria-hidden="true">→</span></button>
+        <p class="privacy"><span aria-hidden="true">♧</span> Sem cadastro. Os arquivos não são armazenados pelo aplicativo.</p>
+      </section>
+      <aside class="card export-card" aria-labelledby="export-title">
+        <div class="section-heading"><span class="step">02</span><h2 id="export-title">Do seu jeito</h2></div>
+        <p class="muted">Escolha como quer baixar o conteúdo.</p>
+        <fieldset id="export-options"><legend class="sr-only">Formato de exportação</legend>
+          <label class="format-option"><input type="radio" name="format" value="md" checked><span class="format-icon">M↓</span><span><strong>Markdown</strong><small>Pronto para editores e IA</small></span><span class="extension">.md</span></label>
+          <label class="format-option"><input type="radio" name="format" value="txt"><span class="format-icon">Tt</span><span><strong>Texto simples</strong><small>Só o conteúdo que importa</small></span><span class="extension">.txt</span></label>
+          <label class="format-option"><input type="radio" name="format" value="html"><span class="format-icon">&lt;/&gt;</span><span><strong>HTML</strong><small>Para abrir no navegador</small></span><span class="extension">.html</span></label>
+          <label class="format-option"><input type="radio" name="format" value="json"><span class="format-icon">{ }</span><span><strong>JSON</strong><small>Conteúdo estruturado para integrar</small></span><span class="extension">.json</span></label>
+        </fieldset>
+        <button id="download-all" class="secondary" disabled>↓ Baixar todos em ZIP</button>
+        <p class="export-note">Um arquivo por documento, reunidos em um único download.</p>
+      </aside>
+    </div>
+    <section id="results" class="card results" hidden aria-labelledby="results-title">
+      <div class="section-heading"><span class="step">03</span><h2 id="results-title">Seu conteúdo, pronto</h2><span id="result-count" class="small-tag"></span></div>
+      <div class="result-toolbar"><label class="sr-only" for="result-select">Documento para visualizar</label><select id="result-select"></select><div class="tabs" role="group" aria-label="Visualização"><button id="preview-tab" aria-pressed="true">Prévia</button><button id="source-tab" aria-pressed="false">Markdown</button></div><button id="copy" class="text-button">Copiar texto</button><button id="download" class="download-button">↓ Baixar arquivo</button></div>
+      <div id="result-warnings" class="message" hidden></div>
+      <article id="preview" class="document-preview" aria-label="Prévia do documento convertido"></article>
+      <pre id="source" hidden></pre>
+    </section>
+    <section class="benefits" aria-label="Como funciona"><div><span>↥</span><strong>Envie de uma vez</strong><p>Selecione vários documentos.<br>Cuidamos de um por vez.</p></div><div><span>⇄</span><strong>O conteúdo vem primeiro</strong><p>Títulos, listas e tabelas em<br>um formato fácil de aproveitar.</p></div><div><span>↓</span><strong>Escolha e leve com você</strong><p>Baixe individualmente ou reúna<br>os resultados em um ZIP.</p></div></section>
+    <section id="formats" class="formats"><div><span class="eyebrow">MUITOS FORMATOS. UM SÓ LUGAR.</span><h2>O que você pode converter?</h2><p>Extraia o conteúdo dos seus documentos.<br>A aparência original pode mudar na conversão.</p></div><div class="format-details"><details open><summary>Documentos, apresentações e planilhas</summary><p>PDF com texto, Word (.docx), PowerPoint (.pptx), Excel (.xlsx e .xls), CSV e TSV.</p></details><details><summary>Web, livros e outros arquivos</summary><p>HTML, EPUB, TXT, Markdown, JSON, XML, RSS, YAML, logs, notebooks Jupyter (.ipynb), mensagens Outlook (.msg) e ZIP com documentos compatíveis.</p></details><details><summary>Imagens, áudio e documentos digitalizados</summary><p>Esta versão web não inclui OCR nem transcrição. PDFs digitalizados e imagens precisam de reconhecimento de texto antes do envio. Áudio, vídeos, arquivos .doc e .ppt antigos não são compatíveis; exporte-os para um formato da lista.</p></details></div></section>
+  </main>
+  <footer class="wrap"><span>MarkItDown<span class="brand-dot">.</span> <span class="muted">Documentos com novas possibilidades.</span></span><span>Feito com o motor open source da Microsoft.</span></footer>
+</body>
+</html>
