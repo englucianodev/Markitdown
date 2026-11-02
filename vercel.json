@@ -4,8 +4,8 @@
   "outputDirectory": "public",
   "functions": {
     "api/index.py": {
-      "maxDuration": 60,
-      "excludeFiles": "{.web-deps/**,.venv/**,packages/**/tests/**,packages/markitdown-mcp/**,packages/markitdown-ocr/**,packages/markitdown-sample-plugin/**,tests/**}"
+      "maxDuration": 300,
+      "excludeFiles": "{.venv/**,**/__pycache__/**,tests/**,.github/**}"
     }
   },
   "rewrites": [{"source": "/api/:path*", "destination": "/api/index"}],

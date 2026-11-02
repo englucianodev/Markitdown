@@ -1,7 +1,4 @@
-.web-deps
 .venv
 **/__pycache__
-packages/*/tests
 tests
 .github
-*.zip

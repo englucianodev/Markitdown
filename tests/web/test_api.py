@@ -7,8 +7,6 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-if (ROOT / ".web-deps").exists():
-    sys.path.insert(0, str(ROOT / ".web-deps"))
 
 from api.index import app, inspect_archive, ConversionError, render_result
 
@@ -35,7 +33,7 @@ class WebTests(unittest.TestCase):
         with self.client.get("/") as home:
             self.assertEqual(home.status_code, 200)
         response = self.client.get("/api/health")
-        self.assertEqual(response.json["max_file_bytes"], 4_000_000)
+        self.assertEqual(response.json["max_file_bytes"], 4_490_000)
         self.assertEqual(response.headers["Cache-Control"], "no-store")
 
     def test_unicode_text(self):
@@ -110,12 +108,23 @@ class WebTests(unittest.TestCase):
     def test_invalid_empty_and_large_inputs(self):
         self.assertEqual(self.upload("malware.exe", b"MZ binary").status_code, 422)
         self.assertEqual(self.upload("vazio.txt", b"").status_code, 422)
-        self.assertEqual(self.upload("grande.txt", b"x" * 4_000_001).status_code, 413)
+        self.assertEqual(self.upload("grande.txt", b"x" * 4_490_001).status_code, 413)
         self.assertEqual(self.upload("corrompido.docx", b"not a document").status_code, 422)
 
     def test_output_limit(self):
         with patch("api.index.convert_document", return_value=("x" * 1_500_000, [])):
             self.assertEqual(self.upload("large.txt", b"text").status_code, 422)
+
+    def test_exact_upload_boundary(self):
+        with patch("api.index.convert_document", return_value=("Texto extraído", [])) as converter:
+            response = self.upload("limite.pdf", b"x" * 4_490_000)
+            self.assertEqual(response.status_code, 200, response.json)
+            self.assertEqual(len(converter.call_args.args[0]), 4_490_000)
+            self.assertEqual(self.upload("excesso.pdf", b"x" * 4_490_001).status_code, 413)
+
+    def test_larger_extracted_output(self):
+        with patch("api.index.convert_document", return_value=("x" * 1_100_000, [])):
+            self.assertEqual(self.upload("large.txt", b"text").status_code, 200)
 
     def test_archive_limits_and_paths(self):
         with self.assertRaises(ConversionError):

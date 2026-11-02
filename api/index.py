@@ -18,8 +18,9 @@ from flask import Flask, jsonify, request, send_from_directory
 from werkzeug.exceptions import RequestEntityTooLarge
 from markitdown import MarkItDown, StreamInfo
 
-MAX_FILE_BYTES = 4_000_000
-MAX_OUTPUT_BYTES = 3_800_000
+# Raw binary uploads: keep 10 KB below Vercel's 4.5 MB payload ceiling.
+MAX_FILE_BYTES = 4_490_000
+MAX_OUTPUT_BYTES = 4_490_000
 MAX_EXPANDED_BYTES = 40_000_000
 EXTENSIONS = frozenset({
     ".pdf", ".docx", ".pptx", ".xlsx", ".xls", ".csv", ".tsv",
@@ -109,7 +110,7 @@ def convert_document(data, filename, converter=None, depth=0):
         text = result.markdown.strip()
     if not text:
         raise ConversionError("Nenhum texto encontrado. PDFs digitalizados precisam de OCR; verifique também se o arquivo tem conteúdo e não possui senha.")
-    if len(text.encode("utf-8")) > 1_000_000:
+    if len(text.encode("utf-8")) > MAX_OUTPUT_BYTES:
         raise ConversionError("O texto extraído é muito grande. Divida o documento em partes menores.")
     return text, warnings
 
@@ -166,7 +167,7 @@ def convert():
 
 @app.errorhandler(413)
 def too_large(error):
-    return jsonify(error="O limite é de 4 MB por arquivo. Divida o documento e tente novamente."), 413
+    return jsonify(error="O limite é de 4,49 MB por arquivo. Divida o documento e tente novamente."), 413
 
 
 if __name__ == "__main__":

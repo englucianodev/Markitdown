@@ -3,6 +3,7 @@
 const $ = (id) => document.getElementById(id);
 const allowed = new Set('.pdf .docx .pptx .xlsx .xls .csv .tsv .html .htm .txt .md .json .xml .rss .epub .ipynb .msg .zip .yaml .yml .log'.split(' '));
 const items = [];
+const MAX_FILE_BYTES = 4_490_000;
 let busy = false;
 let activeId = null;
 const suffix = (name) => name.includes('.') ? name.slice(name.lastIndexOf('.')).toLowerCase() : '';
@@ -19,17 +20,15 @@ function message(text, error = false) {
 }
 
 function addFiles(files) {
-  let rejected = 0;
   for (const file of files) {
-    if (items.length >= 30) { rejected++; continue; }
     if (items.some((item) => item.file.name === file.name && item.file.size === file.size && item.file.lastModified === file.lastModified)) continue;
     let error = '';
     if (!allowed.has(suffix(file.name))) error = 'Formato não compatível. Consulte a lista abaixo.';
-    else if (file.size > 4000000) error = 'O arquivo excede o limite de 4 MB.';
+    else if (file.size > MAX_FILE_BYTES) error = 'O arquivo excede o limite de 4,49 MB.';
     else if (!file.size) error = 'Este arquivo está vazio.';
     items.push({id: crypto.randomUUID(), file, status: error ? 'invalid' : 'pending', error, result: null});
   }
-  message(rejected ? 'Você pode selecionar até 30 arquivos por vez.' : '');
+  message('');
   render();
 }
 
@@ -112,8 +111,10 @@ function downloadBlob(blob, name) {
 
 // ZIP's STORE method keeps exports fully local; UTF-8 names and CRC32 are standard ZIP.
 function zipFiles(files) {
+  const tooLarge = () => new Error('O lote é grande demais para um único ZIP. Baixe os arquivos individualmente ou use lotes menores.');
+  if (files.length > 65535) throw tooLarge();
   const encoder = new TextEncoder(); const chunks = [], central = [];
-  let offset = 0;
+  let offset = 0, centralSize = 0;
   const used = new Set();
   for (const file of files) {
     let name = file.name, index = 2;
@@ -129,7 +130,8 @@ function zipFiles(files) {
     const entry = new Uint8Array(46 + nameBytes.length); const cv = new DataView(entry.buffer);
     cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true); cv.setUint16(8, 0x800, true); cv.setUint16(14, 33, true);
     cv.setUint32(16, crc, true); cv.setUint32(20, data.length, true); cv.setUint32(24, data.length, true); cv.setUint16(28, nameBytes.length, true); cv.setUint32(42, offset, true); entry.set(nameBytes, 46);
-    chunks.push(local, data); central.push(entry); offset += local.length + data.length;
+    if (offset + local.length + data.length + centralSize + entry.length + 22 > 0xffffffff) throw tooLarge();
+    chunks.push(local, data); central.push(entry); offset += local.length + data.length; centralSize += entry.length;
   }
   const end = new Uint8Array(22); const ev = new DataView(end.buffer);
   ev.setUint32(0, 0x06054b50, true); ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
@@ -152,7 +154,7 @@ $('convert').addEventListener('click', async () => {
   for (const [index, item] of pending.entries()) {
     item.status = 'converting'; $('convert').textContent = `Convertendo ${index + 1} de ${pending.length}…`; render();
     try {
-      const response = await fetch('/api/convert', {method: 'POST', headers: {'Content-Type': 'application/octet-stream', 'X-Filename': encodeURIComponent(item.file.name)}, body: item.file, signal: AbortSignal.timeout(65000)});
+      const response = await fetch('/api/convert', {method: 'POST', headers: {'Content-Type': 'application/octet-stream', 'X-Filename': encodeURIComponent(item.file.name)}, body: item.file, signal: AbortSignal.timeout(305000)});
       let body;
       try { body = await response.json(); } catch { throw new Error(response.status === 413 ? 'Arquivo ou resultado grande demais. Divida o documento.' : 'O servidor não respondeu como esperado. Tente novamente.'); }
       if (!response.ok) throw new Error(body.error || 'Não foi possível converter este arquivo.');
@@ -174,7 +176,10 @@ for (const [id, isPreview] of [['preview-tab', true], ['source-tab', false]]) $(
   $('preview-tab').setAttribute('aria-pressed', String(isPreview)); $('source-tab').setAttribute('aria-pressed', String(!isPreview));
 });
 $('download').addEventListener('click', () => { const item = current(); if (!item) return; const file = exportFile(item); downloadBlob(new Blob([file.content], {type:file.type}), file.name); });
-$('download-all').addEventListener('click', () => { if (completed().length) downloadBlob(zipFiles(completed().map((item) => exportFile(item))), 'documentos-convertidos.zip'); });
+$('download-all').addEventListener('click', () => {
+  try { if (completed().length) downloadBlob(zipFiles(completed().map((item) => exportFile(item))), 'documentos-convertidos.zip'); }
+  catch (error) { message(error.message, true); }
+});
 $('copy').addEventListener('click', async () => {
   const item = current(); if (!item) return;
   try { await navigator.clipboard.writeText($('source').hidden ? item.result.text : item.result.markdown); $('copy').textContent = '✓ Copiado'; setTimeout(() => { $('copy').textContent = 'Copiar texto'; }, 2000); }

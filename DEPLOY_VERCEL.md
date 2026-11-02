@@ -19,8 +19,8 @@ texto simples, HTML e JSON. O formato de saída pode ser alterado sem reconverte
    a disponibilidade da API, abra `/api/health`.
 
 Cada push na branch de produção dispara um novo deploy. Não envie `.venv`,
-`.web-deps`, credenciais ou documentos pessoais; os arquivos de ignore já excluem
-os diretórios de desenvolvimento.
+credenciais ou documentos pessoais; os arquivos de ignore já excluem o ambiente
+de desenvolvimento. As dependências são instaladas pela Vercel durante o deploy.
 
 ## Executar localmente
 
@@ -42,7 +42,8 @@ Testes da camada web:
 .\.venv\Scripts\python -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python -m unittest discover -s tests/web -v
 node --check public/app.js
-node tests/web/test_zip.cjs | python tests/web/check_zip.py
+node tests/web/test_upload_limits.cjs
+node tests/web/test_zip.cjs | .\.venv\Scripts\python tests/web/check_zip.py
 ```
 
 ## O que é compatível
@@ -67,12 +68,17 @@ extrai conteúdo; não é um conversor visual de PDF para Word nem de Excel para
 
 ## Limites e privacidade
 
-- Até 30 arquivos na lista e **4.000.000 bytes por arquivo**. O navegador envia
-  um arquivo por requisição para respeitar o limite de payload de 4,5 MB da Vercel:
+- Sem limite fixo de quantidade na seleção; a capacidade prática depende da memória
+  do navegador. O ZIP suporta até 65.535 resultados e tamanho total inferior a 4 GiB;
+  lotes acima desses limites devem ser baixados individualmente ou em partes.
+- **4.490.000 bytes (4,49 MB) por arquivo**. O navegador envia um arquivo por
+  requisição, deixando 10 KB de margem abaixo do limite de payload de 4,5 MB da Vercel:
   https://vercel.com/docs/functions/limitations
-- O texto extraído fica limitado a 1 MB por documento; a resposta JSON fica abaixo
-  de 3,8 MB. Documentos maiores devem ser divididos. A função tem duração máxima
-  configurada de 60 segundos, sujeita ao plano e à configuração da Vercel.
+- A resposta JSON completa pode ter até 4,49 MB, incluindo Markdown, HTML e texto
+  simples. O limite anterior de 1 MB para o texto extraído foi removido; resultados
+  cuja resposta completa exceda o teto precisam ser divididos. A função permite
+  até 300 segundos por documento, com Fluid Compute habilitado na Vercel. O tempo
+  limite do navegador acompanha essa configuração.
 - Arquivos ZIP/Office/EPUB são inspecionados antes da conversão: limite de 40 MB
   descompactados, 1.500 itens e profundidade de compactação limitada.
 - Uploads e resultados são mantidos em memória pelo aplicativo; não há banco,
@@ -85,7 +91,7 @@ extrai conteúdo; não é um conversor visual de PDF para Word nem de Excel para
 - O endpoint é público. Para uso restrito, habilite a proteção de acesso do projeto
   e configure regras e limites no Firewall da Vercel conforme sua necessidade.
 
-Para documentos acima de 4 MB, uma evolução exige upload direto a armazenamento
+Para documentos acima de 4,49 MB, uma evolução exige upload direto a armazenamento
 e um serviço de processamento separado; aumentar apenas `MAX_CONTENT_LENGTH`
 não remove o limite da plataforma.
 
@@ -93,8 +99,24 @@ não remove o limite da plataforma.
 
 - `public/`: interface estática, sem build e sem dependências JavaScript externas.
 - `api/index.py`: API Flask, validação, adaptação para MarkItDown e sanitização.
-- `requirements.txt`: dependências web e conversores usados na interface.
+- `requirements.in`: dependências diretas usadas pela interface.
+- `requirements.txt`: versões fixadas das dependências de produção, incluindo
+  as transitivas, para instalação reproduzível no Python 3.12.
+- `requirements-dev.txt`: acrescenta apenas a dependência para gerar Word nos testes.
 - `vercel.json`: rotas, diretório público, duração da função e cabeçalhos.
 - `tests/web/`: testes de conversão, validação e interoperabilidade do ZIP.
 
-Os pacotes e a interface de linha de comando originais permanecem disponíveis.
+O pacote `packages/markitdown/` e sua interface de linha de comando permanecem
+disponíveis. MCP, plugins externos, testes da distribuição original e configurações
+de Docker foram removidos porque não são usados pelo site. Os módulos internos do
+motor foram preservados para manter suas importações e conversores funcionando.
+
+Ao alterar as dependências diretas, atualize `requirements.in` e gere novamente
+`requirements.txt` com uv, antes de instalar e executar os testes:
+
+```powershell
+python -m uv pip compile requirements.in --python-version 3.12 --universal --no-annotate --output-file requirements.txt
+```
+
+O uv é uma ferramenta opcional para atualizar a lista fixada; não é necessário
+para executar ou publicar a aplicação.
